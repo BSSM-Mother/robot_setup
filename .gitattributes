@@ -1,0 +1,7 @@
+# Shell scripts should always use LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Git files
+.gitattributes text eol=lf
+.gitignore text eol=lf

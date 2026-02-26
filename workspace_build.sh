@@ -1,0 +1,64 @@
+#!/bin/bash
+# 워크스페이스 빌드 스크립트 (자동 클론 & 빌드)
+
+set -e
+
+echo "=========================================="
+echo "워크스페이스 자동 설정 및 빌드 시작"
+echo "=========================================="
+
+# ROS_DISTRO 감지 함수
+detect_ros_distro() {
+    for distro in jazzy humble foxy; do
+        if [ -f "/opt/ros/$distro/setup.bash" ]; then
+            echo "$distro"
+            return 0
+        fi
+    done
+    echo "humble"
+}
+
+ROS_DISTRO=$(detect_ros_distro)
+echo "감지된 ROS 배포판: $ROS_DISTRO"
+source /opt/ros/$ROS_DISTRO/setup.bash
+
+WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../robot_workspace" && pwd)"
+REPO_URL="${1:-https://github.com/bitbyte08/robot_workspace.git}"
+
+echo "[1/5] 워크스페이스 초기화 중..."
+if [ ! -d "$WORKSPACE_DIR" ]; then
+    echo "워크스페이스가 없습니다. 레포지토리에서 클론 중: $REPO_URL"
+    mkdir -p "$(dirname "$WORKSPACE_DIR")"
+    git clone "$REPO_URL" "$WORKSPACE_DIR"
+    echo "클론 완료!"
+else
+    echo "기존 워크스페이스 사용: $WORKSPACE_DIR"
+fi
+
+cd "$WORKSPACE_DIR"
+
+echo "[2/5] 빌드 캐시 정리 중..."
+if [ -d "build" ] || [ -d "install" ] || [ -d "log" ]; then
+    echo "기존 빌드 결과물 제거 중..."
+    rm -rf build install log
+fi
+
+echo "[3/5] Git 서브모듈 초기화 중..."
+git submodule update --init --recursive
+
+echo "[4/5] colcon 빌드 중 (symlink-install)..."
+colcon build \
+    --symlink-install \
+    --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+echo "[5/5] 빌드 결과 검증 중..."
+if [ -f "install/setup.bash" ]; then
+    echo "빌드 성공!"
+else
+    echo "오류: 빌드 실패"
+    exit 1
+fi
+
+echo "=========================================="
+echo "워크스페이스 빌드 완료!"
+echo "=========================================="
