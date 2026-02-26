@@ -1,0 +1,28 @@
+[Unit]
+Description=Robot ROS2 System
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__USER__
+WorkingDirectory=/home/__USER__/robot_workspace
+
+# 환경 변수 설정
+Environment="ROS_DISTRO=humble"
+Environment="RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+Environment="ROS_DOMAIN_ID=0"
+Environment="ROS_LOCALHOST_ONLY=0"
+
+# ROS2 환경 로드 및 시스템 실행
+ExecStart=/bin/bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && source /home/__USER__/robot_workspace/install/setup.bash && ros2 launch robot_launch system.launch.py'
+
+# 프로세스 재시작 정책
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

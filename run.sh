@@ -56,6 +56,7 @@ SKIP_ROSDEP=false
 SKIP_PYTHON=false
 SKIP_BUILD=false
 AUTO_LAUNCH=false
+INSTALL_SERVICE=false
 REPO_URL=""
 
 while [[ $# -gt 0 ]]; do
@@ -88,6 +89,10 @@ while [[ $# -gt 0 ]]; do
             REPO_URL="$2"
             shift 2
             ;;
+                --install-service)
+                    INSTALL_SERVICE=true
+                    shift
+                    ;;
         --help)
             echo "사용법: $0 [옵션]"
             echo ""
@@ -97,9 +102,10 @@ while [[ $# -gt 0 ]]; do
             echo "  --skip-rosdep     ROS 의존성 설치 건너뛰기"
             echo "  --skip-python     Python 의존성 설치 건너뛰기"
             echo "  --skip-build      워크스페이스 빌드 건너뛰기"
-            echo "  --launch          빌드 후 시스템 자동 실행"
-            echo "  --repo <url>      레포지토리 URL 지정 (기본: bitbyte08/robot_workspace)"
-            echo "  --help            이 도움말 표시"
+            echo "  --launch              빌드 후 시스템 자동 실행"
+            echo "  --install-service     Systemd service로 등록 (부팅 시 자동 실행)"
+            echo "  --repo <url>          레포지토리 URL 지정 (기본: bitbyte08/robot_workspace)"
+            echo "  --help                이 도움말 표시"
             exit 0
             ;;
         *)
@@ -141,6 +147,12 @@ else
 fi
 
 echo -e "${GREEN}=========================================${NC}"
+if [ "$INSTALL_SERVICE" = true ]; then
+    run_script "install_service.sh" || { echo -e "${RED}Service 설치 실패${NC}"; exit 1; }
+else
+    echo -e "${YELLOW}건너뜀: Service 설치${NC}"
+fi
+
 echo -e "${GREEN}✓ 모든 설정 완료!${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
@@ -156,6 +168,11 @@ if [ "$AUTO_LAUNCH" = true ]; then
     # 환경 변수 설정
     source /opt/ros/$ROS_DISTRO/setup.bash
     source "$WORKSPACE_DIR/install/setup.bash"
+    
+    # DDS 설정
+    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    export ROS_DOMAIN_ID=0
+    export ROS_LOCALHOST_ONLY=0
     
     echo -e "${GREEN}로봇 시스템 시작 중...${NC}"
     echo ""
