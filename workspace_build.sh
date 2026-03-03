@@ -22,6 +22,7 @@ detect_ros_distro() {
 ROS_DISTRO=""
 REPO_URL="https://github.com/BSSM-Mother/robot_workspace.git"
 SKIP_DESCRIPTION=true
+UPDATE_SUBMODULES=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -35,6 +36,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --with-description)
             SKIP_DESCRIPTION=false
+            shift
+            ;;
+        --update-submodules)
+            UPDATE_SUBMODULES=true
             shift
             ;;
         *)
@@ -79,7 +84,15 @@ if [ -d "build" ] || [ -d "install" ] || [ -d "log" ]; then
 fi
 
 echo "[3/5] Git 서브모듈 초기화 중..."
-git submodule update --init --recursive
+if [ "$UPDATE_SUBMODULES" = true ]; then
+    echo "서브모듈을 원격 최신 버전으로 업데이트 중..."
+    git submodule update --init --recursive
+    git submodule update --remote --recursive
+    git submodule foreach --recursive git checkout origin/main 2>/dev/null || git submodule foreach --recursive git checkout origin/master 2>/dev/null || true
+else
+    echo "서브모듈을 저장된 버전으로 초기화 중..."
+    git submodule update --init --recursive
+fi
 
 echo "[4/6] 패키지 리소스 디렉토리 검증 중..."
 if [ -d "src/robot_description" ]; then
