@@ -21,6 +21,7 @@ detect_ros_distro() {
 # 옵션 처리
 ROS_DISTRO=""
 REPO_URL="https://github.com/BSSM-Mother/robot_workspace.git"
+SKIP_DESCRIPTION=true
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -31,6 +32,10 @@ while [[ $# -gt 0 ]]; do
         --repo)
             REPO_URL="$2"
             shift 2
+            ;;
+        --with-description)
+            SKIP_DESCRIPTION=false
+            shift
             ;;
         *)
             REPO_URL="$1"
@@ -76,12 +81,28 @@ fi
 echo "[3/5] Git 서브모듈 초기화 중..."
 git submodule update --init --recursive
 
-echo "[4/5] colcon 빌드 중 (symlink-install)..."
-colcon build \
-    --symlink-install \
-    --cmake-args -DCMAKE_BUILD_TYPE=Release
+echo "[4/6] 패키지 리소스 디렉토리 검증 중..."
+if [ -d "src/robot_description" ]; then
+    if [ ! -d "src/robot_description/meshes" ]; then
+        echo "경고: src/robot_description/meshes 디렉토리가 없어 생성합니다."
+        mkdir -p "src/robot_description/meshes"
+    fi
+fi
 
-echo "[5/5] 빌드 결과 검증 중..."
+echo "[5/6] colcon 빌드 중 (symlink-install)..."
+if [ "$SKIP_DESCRIPTION" = true ]; then
+    echo "실로봇 모드: robot_description 패키지 빌드 제외"
+    colcon build \
+        --symlink-install \
+        --packages-skip robot_description \
+        --cmake-args -DCMAKE_BUILD_TYPE=Release
+else
+    colcon build \
+        --symlink-install \
+        --cmake-args -DCMAKE_BUILD_TYPE=Release
+fi
+
+echo "[6/6] 빌드 결과 검증 중..."
 if [ -f "install/setup.bash" ]; then
     echo "빌드 성공!"
 else
