@@ -55,7 +55,8 @@ sudo apt-get install -y \
     ros-$ROS_DISTRO-robot-state-publisher \
     ros-$ROS_DISTRO-ros-core \
     ros-$ROS_DISTRO-xacro \
-    ros-$ROS_DISTRO-cv-bridge
+    ros-$ROS_DISTRO-cv-bridge \
+    ros-$ROS_DISTRO-image-tools
 
 echo "[3/3] rosdep 및 colcon 설치 중..."
 sudo apt-get install -y \
