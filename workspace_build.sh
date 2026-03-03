@@ -20,7 +20,7 @@ detect_ros_distro() {
 
 # 옵션 처리
 ROS_DISTRO=""
-REPO_URL="https://github.com/bitbyte08/robot_workspace.git"
+REPO_URL="https://github.com/BSSM-Mother/robot_workspace.git"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
