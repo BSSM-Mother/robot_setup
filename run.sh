@@ -42,10 +42,15 @@ run_script() {
     chmod +x "$script_path"
     
     # 나머지 인자들 전달
+    local exit_code=0
     if [ $# -gt 0 ]; then
-        bash "$script_path" "$@"
+        bash "$script_path" "$@" || exit_code=$?
     else
-        bash "$script_path"
+        bash "$script_path" || exit_code=$?
+    fi
+
+    if [ $exit_code -ne 0 ]; then
+        return $exit_code
     fi
     echo ""
 }
@@ -188,26 +193,31 @@ echo -e "${GREEN}✓ 모든 설정 완료!${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
 
-# 자동 실행 옵션명시적으로 지정되지 않았으면 감지
+# 자동 실행 옵션
+if [ "$AUTO_LAUNCH" = true ]; then
     if [ -z "$ROS_DISTRO" ]; then
         ROS_DISTRO=$(detect_ros_distro)
     fi
-    
+
     echo -e "${YELLOW}시스템 실행 준비 중...${NC}"
-    
-    # ROS_DISTRO 감지 및 환경 로드
-    ROS_DISTRO=$(detect_ros_distro)
-    WORKSPACE_DIR="$(cd "${SCRIPT_DIR}/../robot_workspace" && pwd)"
-    
-    # 환경 변수 설정
+
+    WORKSPACE_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)/robot_workspace"
+    if [ ! -f "/opt/ros/$ROS_DISTRO/setup.bash" ]; then
+        echo -e "${RED}오류: /opt/ros/$ROS_DISTRO/setup.bash를 찾을 수 없습니다${NC}"
+        exit 1
+    fi
+    if [ ! -f "$WORKSPACE_DIR/install/setup.bash" ]; then
+        echo -e "${RED}오류: $WORKSPACE_DIR/install/setup.bash를 찾을 수 없습니다${NC}"
+        exit 1
+    fi
+
     source /opt/ros/$ROS_DISTRO/setup.bash
     source "$WORKSPACE_DIR/install/setup.bash"
-    
-    # DDS 설정
+
     export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     export ROS_DOMAIN_ID=0
     export ROS_LOCALHOST_ONLY=0
-    
+
     echo -e "${GREEN}로봇 시스템 시작 중...${NC}"
     echo ""
     ros2 launch robot_launch system.launch.py
@@ -223,3 +233,4 @@ else
     echo "또는 한 명령으로:"
     echo "   bash $SCRIPT_DIR/run.sh --launch"
     echo ""
+fi

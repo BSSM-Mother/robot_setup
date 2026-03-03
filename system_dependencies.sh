@@ -7,6 +7,16 @@ echo "=========================================="
 echo "시스템 의존성(apt) 설치 시작"
 echo "=========================================="
 
+detect_ros_distro() {
+    for distro in jazzy humble foxy; do
+        if [ -f "/opt/ros/$distro/setup.bash" ]; then
+            echo "$distro"
+            return 0
+        fi
+    done
+    echo "humble"
+}
+
 # 옵션 처리
 ROS_DISTRO=""
 while [[ $# -gt 0 ]]; do
@@ -23,8 +33,7 @@ done
 
 # ROS 디스트로 감지
 if [ -z "$ROS_DISTRO" ]; then
-    source /opt/ros/*/setup.bash 2>/dev/null
-    ROS_DISTRO=$(echo $ROS_DISTRO_OVERRIDE 2>/dev/null || echo "humble")
+    ROS_DISTRO=$(detect_ros_distro)
     echo "감지된 ROS 배포판: $ROS_DISTRO"
 else
     echo "명시적으로 지정된 ROS 배포판: $ROS_DISTRO"

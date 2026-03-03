@@ -7,6 +7,9 @@ echo "=========================================="
 echo "ROS2 설치 시작"
 echo "=========================================="
 
+source /etc/os-release
+UBUNTU_VERSION=$VERSION_CODENAME
+
 # 명시적 ROS_DISTRO 옵션 처리
 ROS_DISTRO=""
 while [[ $# -gt 0 ]]; do
@@ -24,8 +27,6 @@ done
 # 명시적으로 지정되지 않았으면 우분투 버전으로 감지
 if [ -z "$ROS_DISTRO" ]; then
     echo "[1/6] 우분투 버전 확인 중..."
-    source /etc/os-release
-    UBUNTU_VERSION=$VERSION_CODENAME
     echo "감지된 버전: $UBUNTU_VERSION"
 
     # 버전별 ROS2 매핑
@@ -67,7 +68,8 @@ export LANG=en_US.UTF-8
 # 저장소 설정
 echo "[4/6] ROS2 저장소 설정 중..."
 sudo apt install -y curl gnupg lsb-release
-sudo curl -sSL https://repo.ros2.org/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/ros-archive-keyring.gpg
+sudo chmod a+r /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $UBUNTU_VERSION main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 # ROS2 설치

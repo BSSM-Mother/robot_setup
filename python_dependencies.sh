@@ -40,6 +40,10 @@ else
     echo "명시적으로 지정된 ROS 배포판: $ROS_DISTRO"
 fi
 
+if [ ! -f "/opt/ros/$ROS_DISTRO/setup.bash" ]; then
+    echo "에러: /opt/ros/$ROS_DISTRO/setup.bash를 찾을 수 없습니다. 먼저 ROS2를 설치하세요."
+    exit 1
+fi
 source /opt/ros/$ROS_DISTRO/setup.bash
 
 echo "[1/2] pip 업그레이드 중..."
@@ -47,7 +51,7 @@ pip3 install --break-system-packages --upgrade pip setuptools wheel
 
 echo "[2/2] 프로젝트 Python 의존성 설치 중..."
 # robot_perception 패키지의 requirements.txt가 있으면 설치
-WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../robot_workspace" && pwd)"
+WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/robot_workspace"
 
 if [ -f "$WORKSPACE_DIR/src/robot_perception/requirements.txt" ]; then
     echo "robot_perception 의존성 설치 중..."
@@ -65,6 +69,6 @@ pip3 install --break-system-packages \
     torchvision \
     ultralytics
 
-echo "=========================================="
+echo "==========================================="
 echo "Python 의존성 설치 완료!"
 echo "=========================================="
