@@ -53,24 +53,25 @@ else
     echo "[1/6] 명시적으로 지정된 ROS_DISTRO 사용: $ROS_DISTRO"
 fi
 
+# 저장소 설정
+echo "[2/6] ROS2 저장소 설정 중..."
+sudo apt-get install -y curl gnupg lsb-release ca-certificates
+sudo mkdir -p /usr/share/keyrings
+curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/ros-archive-keyring.gpg
+sudo chmod a+r /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $UBUNTU_VERSION main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
 # 시스템 업데이트
-echo "[2/6] 시스템 업데이트 중..."
+echo "[3/6] 시스템 업데이트 중..."
 sudo apt-get update
 sudo apt-get upgrade -y
 
 # 로케일 설정
-echo "[3/6] 로케일 설정 중..."
+echo "[4/6] 로케일 설정 중..."
 sudo apt-get install -y locales
 sudo locale-gen en_US en_US.UTF-8
 sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
-
-# 저장소 설정
-echo "[4/6] ROS2 저장소 설정 중..."
-sudo apt install -y curl gnupg lsb-release
-curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/ros-archive-keyring.gpg
-sudo chmod a+r /usr/share/keyrings/ros-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $UBUNTU_VERSION main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 # ROS2 설치
 echo "[5/6] ROS2 $ROS_DISTRO 설치 중..."
