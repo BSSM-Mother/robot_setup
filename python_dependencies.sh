@@ -62,58 +62,39 @@ if [ -f "$WORKSPACE_DIR/src/robot_perception/requirements.txt" ]; then
     python3 -m pip install --break-system-packages -r "$WORKSPACE_DIR/src/robot_perception/requirements.txt"
 fi
 
-# 공통 Python 패키지 (ARM 아키텍처에 맞춰 설치)
+# 공통 Python 패키지 설치
 echo "공통 Python 패키지 설치 중..."
 
-# ARM 아키텍처 (라즈베리파이 등)는 최적화 플래그와 함께 설치
+# ARM 아키텍처 (라즈베리파이) 최적화
 if [[ "$ARCH" == "armv7l" || "$ARCH" == "aarch64" ]]; then
-    echo "ARM 아키텍처 감지: Raspberry Pi 최적화 설치 시작..."
+    echo "ARM 아키텍처 감지: Raspberry Pi 최적화 설치..."
     
     # 환경 변수 설정 - ARM CPU 최적화
     export OPENBLAS_CORETYPE=ARMV7
     export CFLAGS="-fPIC"
     
-    # 기본 패키지 설치
+    # 기본 패키지 업그레이드
     python3 -m pip install --break-system-packages --upgrade pip wheel setuptools
     
-    # NumPy 호환 버전 (소스 컴파일)
-    python3 -m pip install --break-system-packages --no-cache-dir "numpy==1.23.5"
+    # 필수 Python 패키지 (OpenCV HOG 기반 - PyTorch 불필요)
+    echo "OpenCV 기반 패키지 설치 중 (PyTorch/YOLO 제외)..."
+    python3 -m pip install --break-system-packages --no-cache-dir \
+        "numpy==1.23.5" \
+        "opencv-contrib-python==4.7.0.72" \
+        scipy \
+        matplotlib
     
-    # OpenCV
-    python3 -m pip install --break-system-packages --no-cache-dir "opencv-contrib-python==4.7.0.72"
-    
-    # SciPy, Matplotlib
-    python3 -m pip install --break-system-packages --no-cache-dir scipy matplotlib
-    
-    # PyTorch + YOLO (ARMv7l/aarch64 최적화)
-    echo "PyTorch ARM 버전 설치 중..."
-    if [ "$ARCH" == "armv7l" ]; then
-        # ARMv7l: 소스 컴파일 옵션 포함
-        python3 -m pip install --break-system-packages --no-cache-dir --no-binary :all: \
-            "torch==2.0.1" "torchvision==0.15.2" --index-url https://download.pytorch.org/whl/armv7l
-    else
-        # aarch64 (Raspberry Pi 4/5)
-        python3 -m pip install --break-system-packages --no-cache-dir \
-            "torch==2.0.1" "torchvision==0.15.2" --index-url https://download.pytorch.org/whl/cpu
-    fi
-    
-    # Ultralytics YOLO (특정 호환 버전)
-    echo "설치 중: ultralytics==8.0.156 (라즈베리파이 호환 버전)..."
-    if ! python3 -m pip install --break-system-packages --no-cache-dir "ultralytics==8.0.156" 2>/dev/null; then
-        echo "⚠️ ultralytics==8.0.156 설치 실패. 대체 버전 설치 중..."
-        python3 -m pip uninstall -y ultralytics torch torchvision --break-system-packages 2>/dev/null || true
-        python3 -m pip install --break-system-packages --no-cache-dir "ultralytics==8.0.0"
-    fi
+    echo "✓ ARM 최적화 설치 완료 (HOG 기반 person detector)"
 else
     # x86_64 또는 다른 아키텍처는 표준 설치
+    echo "x86_64 아키텍처: 표준 패키지 설치..."
     python3 -m pip install --break-system-packages \
         "numpy<2" \
         scipy \
         matplotlib \
-        opencv-python \
-        torch \
-        torchvision \
-        ultralytics
+        opencv-python
+    
+    echo "✓ 표준 설치 완료"
 fi
 
 echo "==========================================="
