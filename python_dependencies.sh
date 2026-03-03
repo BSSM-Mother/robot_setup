@@ -46,8 +46,8 @@ if [ ! -f "/opt/ros/$ROS_DISTRO/setup.bash" ]; then
 fi
 source /opt/ros/$ROS_DISTRO/setup.bash
 
-echo "[1/2] pip 업그레이드 중..."
-pip3 install --break-system-packages --upgrade pip setuptools wheel
+echo "[1/2] pip 환경 확인 중..."
+python3 -m pip --version >/dev/null
 
 echo "[2/2] 프로젝트 Python 의존성 설치 중..."
 # robot_perception 패키지의 requirements.txt가 있으면 설치
@@ -55,12 +55,12 @@ WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/robot_workspace"
 
 if [ -f "$WORKSPACE_DIR/src/robot_perception/requirements.txt" ]; then
     echo "robot_perception 의존성 설치 중..."
-    pip3 install --break-system-packages -r "$WORKSPACE_DIR/src/robot_perception/requirements.txt"
+    python3 -m pip install --break-system-packages -r "$WORKSPACE_DIR/src/robot_perception/requirements.txt"
 fi
 
 # 공통 Python 패키지
 echo "공통 Python 패키지 설치 중..."
-pip3 install --break-system-packages \
+python3 -m pip install --break-system-packages \
     "numpy<2" \
     scipy \
     matplotlib \
