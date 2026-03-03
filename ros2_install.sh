@@ -11,6 +11,20 @@ source /etc/os-release
 UBUNTU_VERSION=$VERSION_CODENAME
 ARCH=$(dpkg --print-architecture)
 
+ensure_ubuntu_updates_repo() {
+    if grep -Rqs " ${UBUNTU_VERSION}-updates " /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null; then
+        return 0
+    fi
+
+    local ubuntu_mirror="http://archive.ubuntu.com/ubuntu"
+    if [[ "$ARCH" == "arm64" || "$ARCH" == "armhf" ]]; then
+        ubuntu_mirror="http://ports.ubuntu.com/ubuntu-ports"
+    fi
+
+    echo "경고: ${UBUNTU_VERSION}-updates 저장소가 없어 자동 추가합니다."
+    echo "deb ${ubuntu_mirror} ${UBUNTU_VERSION}-updates main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/ubuntu-updates.list > /dev/null
+}
+
 # 명시적 ROS_DISTRO 옵션 처리
 ROS_DISTRO=""
 while [[ $# -gt 0 ]]; do
@@ -63,6 +77,7 @@ fi
 # 저장소 설정
 echo "[2/6] ROS2 저장소 설정 중..."
 sudo apt-get install -y curl gnupg lsb-release ca-certificates
+ensure_ubuntu_updates_repo
 sudo mkdir -p /usr/share/keyrings
 curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor --yes -o /usr/share/keyrings/ros-archive-keyring.gpg
 sudo chmod a+r /usr/share/keyrings/ros-archive-keyring.gpg
