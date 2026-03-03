@@ -125,7 +125,7 @@ done
 # 서로 다른 단계 실행
 if [ "$SKIP_ROS2" = false ]; then
     if [ -n "$ROS_DISTRO" ]; then
-        run_script "ros2_install.sh" "--distro $ROS_DISTRO" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
+        run_script "ros2_install.sh" --distro "$ROS_DISTRO" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
     else
         run_script "ros2_install.sh" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
     fi
@@ -134,36 +134,52 @@ else
 fi
 
 if [ "$SKIP_SYSTEM" = false ]; then
-    run_script "system_dependencies.sh" || { echo -e "${RED}시스템 의존성 설치 실패${NC}"; exit 1; }
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "system_dependencies.sh" --distro "$ROS_DISTRO" || { echo -e "${RED}시스템 의존성 설치 실패${NC}"; exit 1; }
+    else
+        run_script "system_dependencies.sh" || { echo -e "${RED}시스템 의존성 설치 실패${NC}"; exit 1; }
+    fi
 else
     echo -e "${YELLOW}건너뜀: 시스템 의존성 설치${NC}"
 fi
 
 if [ "$SKIP_ROSDEP" = false ]; then
-    run_script "ros_dependencies.sh" || { echo -e "${RED}ROS 의존성 설치 실패${NC}"; exit 1; }
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "ros_dependencies.sh" --distro "$ROS_DISTRO" || { echo -e "${RED}ROS 의존성 설치 실패${NC}"; exit 1; }
+    else
+        run_script "ros_dependencies.sh" || { echo -e "${RED}ROS 의존성 설치 실패${NC}"; exit 1; }
+    fi
 else
     echo -e "${YELLOW}건너뜀: ROS 의존성 설치${NC}"
 fi
 
 if [ "$SKIP_PYTHON" = false ]; then
-    run_script "python_dependencies.sh" || { echo -e "${RED}Python 의존성 설치 실패${NC}"; exit 1; }
-else
     if [ -n "$ROS_DISTRO" ]; then
-        run_script "workspace_build.sh" "--distro $ROS_DISTRO --repo ${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+        run_script "python_dependencies.sh" --distro "$ROS_DISTRO" || { echo -e "${RED}Python 의존성 설치 실패${NC}"; exit 1; }
     else
-        run_script "workspace_build.sh" "${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+        run_script "python_dependencies.sh" || { echo -e "${RED}Python 의존성 설치 실패${NC}"; exit 1; }
     fi
+else
+    echo -e "${YELLOW}건너뜀: Python 의존성 설치${NC}"
 fi
 
 if [ "$SKIP_BUILD" = false ]; then
-    run_script "workspace_build.sh" "$REPO_URL" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "workspace_build.sh" --distro "$ROS_DISTRO" --repo "${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+    else
+        run_script "workspace_build.sh" --repo "${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+    fi
 else
     echo -e "${YELLOW}건너뜀: 워크스페이스 빌드${NC}"
 fi
 
 echo -e "${GREEN}=========================================${NC}"
 if [ "$INSTALL_SERVICE" = true ]; then
-    run_script "install_service.sh" || { echo -e "${RED}Service 설치 실패${NC}"; exit 1; }
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "install_service.sh" --distro "$ROS_DISTRO" || { echo -e "${RED}Service 설치 실패${NC}"; exit 1; }
+    else
+        run_script "install_service.sh" || { echo -e "${RED}Service 설치 실패${NC}"; exit 1; }
+    fi
 else
     echo -e "${YELLOW}건너뜀: Service 설치${NC}"
 fi

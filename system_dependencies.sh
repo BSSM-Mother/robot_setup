@@ -7,9 +7,28 @@ echo "=========================================="
 echo "시스템 의존성(apt) 설치 시작"
 echo "=========================================="
 
+# 옵션 처리
+ROS_DISTRO=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --distro)
+            ROS_DISTRO="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 # ROS 디스트로 감지
-source /opt/ros/*/setup.bash 2>/dev/null
-ROS_DISTRO=$(echo $ROS_DISTRO_OVERRIDE 2>/dev/null || echo "humble")
+if [ -z "$ROS_DISTRO" ]; then
+    source /opt/ros/*/setup.bash 2>/dev/null
+    ROS_DISTRO=$(echo $ROS_DISTRO_OVERRIDE 2>/dev/null || echo "humble")
+    echo "감지된 ROS 배포판: $ROS_DISTRO"
+else
+    echo "명시적으로 지정된 ROS 배포판: $ROS_DISTRO"
+fi
 
 echo "[1/3] 기본 패키지 및 Git 설치 중..."
 sudo apt-get update

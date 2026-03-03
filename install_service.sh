@@ -3,6 +3,18 @@
 
 set -e
 
+# 옵션 처리 (호환성을 위해)
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --distro)
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
 echo "=========================================="
 echo "Robot ROS2 Systemd Service 설치"
 echo "=========================================="

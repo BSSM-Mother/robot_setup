@@ -19,8 +19,28 @@ detect_ros_distro() {
     echo "humble"
 }
 
-ROS_DISTRO=$(detect_ros_distro)
-echo "감지된 ROS 배포판: $ROS_DISTRO"
+# 옵션 처리
+ROS_DISTRO=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --distro)
+            ROS_DISTRO="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# 명시적으로 지정되지 않았으면 감지
+if [ -z "$ROS_DISTRO" ]; then
+    ROS_DISTRO=$(detect_ros_distro)
+    echo "감지된 ROS 배포판: $ROS_DISTRO"
+else
+    echo "명시적으로 지정된 ROS 배포판: $ROS_DISTRO"
+fi
+
 source /opt/ros/$ROS_DISTRO/setup.bash
 
 echo "[1/2] rosdep 초기화 중..."
