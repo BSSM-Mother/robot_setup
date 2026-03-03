@@ -18,12 +18,38 @@ detect_ros_distro() {
     echo "humble"
 }
 
-ROS_DISTRO=$(detect_ros_distro)
-echo "감지된 ROS 배포판: $ROS_DISTRO"
+# 옵션 처리
+ROS_DISTRO=""
+REPO_URL="https://github.com/bitbyte08/robot_workspace.git"
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --distro)
+            ROS_DISTRO="$2"
+            shift 2
+            ;;
+        --repo)
+            REPO_URL="$2"
+            shift 2
+            ;;
+        *)
+            REPO_URL="$1"
+            shift
+            ;;
+    esac
+done
+
+# 명시적으로 지정되지 않았으면 설치된 배포판 감지
+if [ -z "$ROS_DISTRO" ]; then
+    ROS_DISTRO=$(detect_ros_distro)
+    echo "감지된 ROS 배포판: $ROS_DISTRO"
+else
+    echo "명시적으로 지정된 ROS 배포판: $ROS_DISTRO"
+fi
+
 source /opt/ros/$ROS_DISTRO/setup.bash
 
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../robot_workspace" && pwd)"
-REPO_URL="${1:-https://github.com/bitbyte08/robot_workspace.git}"
 
 echo "[1/5] 워크스페이스 초기화 중..."
 if [ ! -d "$WORKSPACE_DIR" ]; then

@@ -31,6 +31,7 @@ echo ""
 run_script() {
     local script_name=$1
     local script_path="$SCRIPT_DIR/$script_name"
+    shift
     
     if [ ! -f "$script_path" ]; then
         echo -e "${RED}오류: $script_path를 찾을 수 없습니다${NC}"
@@ -40,9 +41,9 @@ run_script() {
     echo -e "${YELLOW}실행: $script_name${NC}"
     chmod +x "$script_path"
     
-    # 첫 번째 전달 인자가 있으면 전달
-    if [ -n "$2" ]; then
-        bash "$script_path" "$2"
+    # 나머지 인자들 전달
+    if [ $# -gt 0 ]; then
+        bash "$script_path" "$@"
     else
         bash "$script_path"
     fi
@@ -58,6 +59,7 @@ SKIP_BUILD=false
 AUTO_LAUNCH=false
 INSTALL_SERVICE=false
 REPO_URL=""
+ROS_DISTRO=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -81,6 +83,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_BUILD=true
             shift
             ;;
+        --distro)
+            ROS_DISTRO="$2"
+            shift 2
+            ;;
         --launch)
             AUTO_LAUNCH=true
             shift
@@ -89,14 +95,15 @@ while [[ $# -gt 0 ]]; do
             REPO_URL="$2"
             shift 2
             ;;
-                --install-service)
-                    INSTALL_SERVICE=true
-                    shift
-                    ;;
+        --install-service)
+            INSTALL_SERVICE=true
+            shift
+            ;;
         --help)
             echo "사용법: $0 [옵션]"
             echo ""
             echo "옵션:"
+            echo "  --distro <name>   ROS2 배포판 명시적 지정 (jazzy, humble, foxy)"
             echo "  --skip-ros2       ROS2 설치 건너뛰기"
             echo "  --skip-system     시스템 의존성 설치 건너뛰기"
             echo "  --skip-rosdep     ROS 의존성 설치 건너뛰기"
@@ -117,7 +124,11 @@ done
 
 # 서로 다른 단계 실행
 if [ "$SKIP_ROS2" = false ]; then
-    run_script "ros2_install.sh" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "ros2_install.sh" "--distro $ROS_DISTRO" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
+    else
+        run_script "ros2_install.sh" || { echo -e "${RED}ROS2 설치 실패${NC}"; exit 1; }
+    fi
 else
     echo -e "${YELLOW}건너뜀: ROS2 설치${NC}"
 fi
@@ -137,7 +148,11 @@ fi
 if [ "$SKIP_PYTHON" = false ]; then
     run_script "python_dependencies.sh" || { echo -e "${RED}Python 의존성 설치 실패${NC}"; exit 1; }
 else
-    echo -e "${YELLOW}건너뜀: Python 의존성 설치${NC}"
+    if [ -n "$ROS_DISTRO" ]; then
+        run_script "workspace_build.sh" "--distro $ROS_DISTRO --repo ${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+    else
+        run_script "workspace_build.sh" "${REPO_URL:-https://github.com/bitbyte08/robot_workspace.git}" || { echo -e "${RED}워크스페이스 빌드 실패${NC}"; exit 1; }
+    fi
 fi
 
 if [ "$SKIP_BUILD" = false ]; then
@@ -157,8 +172,11 @@ echo -e "${GREEN}✓ 모든 설정 완료!${NC}"
 echo -e "${GREEN}=========================================${NC}"
 echo ""
 
-# 자동 실행 옵션
-if [ "$AUTO_LAUNCH" = true ]; then
+# 자동 실행 옵션명시적으로 지정되지 않았으면 감지
+    if [ -z "$ROS_DISTRO" ]; then
+        ROS_DISTRO=$(detect_ros_distro)
+    fi
+    
     echo -e "${YELLOW}시스템 실행 준비 중...${NC}"
     
     # ROS_DISTRO 감지 및 환경 로드
